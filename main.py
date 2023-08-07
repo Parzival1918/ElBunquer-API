@@ -19,8 +19,12 @@ db = deta.Base("elbunquer-api-base")
 
 tags_metadata = [
     {
-        "name": "Informació episodis",
+        "name": "Informació episodi",
         "description": "Obté informació d'un episodi del podcast.",
+    },
+    {
+        "name": "Informació episodis",
+        "description": "Obté informació de multiples episodis del podcast.",
     },
 ]
 
@@ -42,7 +46,7 @@ app = FastAPI(
     redoc_url="/alt-docs",
 )
 
-@app.get("/info-episodi/{temporada}/{episodi}", tags=["Informació episodis"])
+@app.get("/info-episodi/{temporada}/{episodi}", tags=["Informació episodi"], description="Obté informació d'un episodi del podcast.")
 def info_episodi_per_temporada(temporada: int, episodi: int):
     #Get from Deta base
     key = f"s{temporada}e{episodi}"
@@ -52,7 +56,7 @@ def info_episodi_per_temporada(temporada: int, episodi: int):
     
     return data
 
-@app.get("/info-episodi/random", tags=["Informació episodis"])
+@app.get("/info-episodi/aleatori", tags=["Informació episodi"], description="Obté informació d'un episodi aleatori del podcast.")
 def episodi_aleatori(inclou_extres: bool = False):
     #Get from Deta base info
     info = db.get(key="info")
@@ -78,3 +82,48 @@ def episodi_aleatori(inclou_extres: bool = False):
         raise HTTPException(status_code=400, detail="L'episodi i/o la temporada no existeix")
 
     return data
+
+@app.get("/info-episodis/per-temporada/{temporada}", tags=["Informació episodis"], description="Obté informació de multiples episodis del podcast d'una temporada.")
+def info_episodis_per_temporada(temporada: int):
+    #Get from Deta base
+    key = f"s{temporada}"
+    data = db.fetch(query={"season": temporada}, limit=1000)
+    if data is None:
+        raise HTTPException(status_code=400, detail="L'episodi i/o la temporada no existeix")
+    
+    return data.items
+
+def search_word(word: str, text: str):
+    for w in text.split(sep=" "):
+        if word == w: #Exact match
+            print(f"Exact matching {w} |-| {word}")
+            return True
+        if (word in w or w in word) and abs(len(word)-len(w)) <= 2 and len(w) > 2:
+            print(f"Matching {w} |-| {word}")
+            return True
+        
+    return False
+        
+@app.get("/info-episodis/per-cerca/{cerca}", tags=["Informació episodis"], description="Obté informació de multiples episodis del podcast fent una cerca per paraula.")
+def info_episodis_per_cerca(cerca: str, cerca_descripcio: bool = False):
+    print(f"Searched for: {cerca}")
+    #Get from Deta base
+    if cerca_descripcio:
+        data = db.fetch(query=[{"videoDescription?contains": cerca}, {"videoTitle?contains": cerca}], limit=1000)
+    else:
+        data = db.fetch(query={"videoTitle?contains": cerca}, limit=1000)
+    if data is None:
+        raise HTTPException(status_code=400, detail="L'episodi i/o la temporada no existeix")
+    
+    furtherFileredData = []
+    for item in data.items:
+        if cerca_descripcio:
+            if search_word(cerca, item["videoTitle"]) or search_word(cerca, item["videoDescription"]):
+                furtherFileredData.append(item)
+        else:
+            if search_word(cerca, item["videoTitle"]):
+                furtherFileredData.append(item)
+
+    print(f"Found {len(furtherFileredData)} results")
+    
+    return furtherFileredData
