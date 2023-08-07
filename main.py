@@ -5,6 +5,8 @@ from typing import Union
 import json
 from random import choice
 from deta import Deta
+import os
+import googleapiclient.discovery
 
 # Initialize with a Project Key from DetaBaseKey.txt
 with open("DetaBaseKey.txt") as f:
@@ -25,6 +27,10 @@ tags_metadata = [
     {
         "name": "Informació episodis",
         "description": "Obté informació de multiples episodis del podcast.",
+    },
+    {
+        "name": "Actualitza informació",
+        "description": "Actualitza la informació dels episodis del podcast.",
     },
 ]
 
@@ -127,3 +133,60 @@ def info_episodis_per_cerca(cerca: str, cerca_descripcio: bool = False):
     print(f"Found {len(furtherFileredData)} results")
     
     return furtherFileredData
+
+from pydantic import BaseModel
+
+class DetaSpaceActions(BaseModel):
+    event: dict = {"id": str, "trigger": str}
+
+def obtainSeason(videoTitle: str):
+    #Get the season number, parse title text to find digits in format 00x00
+    try:
+        seasonep = videoTitle.split(" ")[-1]
+        #remove brackets
+        seasonep = seasonep.replace(")","")
+        seasonep = seasonep.replace("(","")
+        season = int(seasonep.split("x")[0])
+        episode = int(seasonep.split("x")[1])
+
+        return season, episode
+    except:
+        print("ERROR in: " + videoTitle)
+        return None, None
+    
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+
+api_service_name = "youtube"
+api_version = "v3"
+DEVELOPER_KEY = YTkey
+ELBUNQUER_ID = "PL5HwsHboiE9ngozgQ1ZkB9X4gnEwUcLR3"
+
+def callYTAPI(playlistIdtxt="", pageTokentxt=""):
+    youtube = googleapiclient.discovery.build(
+        api_service_name, api_version, developerKey = DEVELOPER_KEY)
+
+    request = youtube.playlistItems().list(
+        part="snippet",
+        maxResults=50,
+        pageToken=pageTokentxt,
+        playlistId=playlistIdtxt
+    )
+    response = request.execute()
+
+    return response
+
+def updateDatabase():
+    pass
+
+# Paths for Deta Space to call at scheduled times
+@app.post("/__space/v0/actions", tags=["Actualitza informació"], description="Actualitza la informació dels episodis del podcast, **no es pot accedir.**", include_in_schema=True)
+def actualitza_info(action: DetaSpaceActions):
+    action = action.model_dump()
+    actionID = action["event"]["id"]
+
+    if actionID == "updateInfo":
+        updateDatabase()
+    else:
+        raise HTTPException(status_code=402, detail="Action not found")
+
+    return {"message": f"Action {actionID} received"}
