@@ -135,18 +135,23 @@ while nextPage and not allEntriesAlreadyInDeta:
                 print(f"ERROR: {item['snippet']['title']} is already in Deta, but with different season or episode")
                 print(f"Season in Deta: {season}, Season in YT: {season2}")
                 print(f"Episode in Deta: {episode}, Episode in YT: {episode2}")
+
+                info[f"{season}"] -= 1
                 
                 #Add to Deta again with the new season and episode
                 key,season=get_key_from_title(item["snippet"]["title"])
+                # db.delete(key=key)
                 # db.put(format_entry(item), key=key)
                 itemsCount += 1
 
                 #Update info, check that season exists
-                info[f"{season}"] -= 1
                 if f"{season2}" in info:
                     info[f"{season2}"] += 1
                 else:
                     info[f"{season2}"] = 1
+
+                print(f"Changed and added  {item['snippet']['title']} to Deta")
+                print(info)
             else:
                 print(f"Item {item['snippet']['title']} already in Deta")
                 allEntriesAlreadyInDeta = True
