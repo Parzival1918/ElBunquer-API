@@ -134,11 +134,6 @@ def info_episodis_per_cerca(cerca: str, cerca_descripcio: bool = False):
     
     return furtherFileredData
 
-from pydantic import BaseModel
-
-class DetaSpaceActions(BaseModel):
-    event: dict = {"id": str, "trigger": str}
-
 def obtainSeason(videoTitle: str):
     #Get the season number, parse title text to find digits in format 00x00
     try:
@@ -304,6 +299,29 @@ def updateDatabase():
     print(info)
     # db.put(info, key="info")
 
+def updateEpisodeCount():
+    #Get from Deta base info
+    info = db.get(key="info")
+    seasonsInInfo = list(info.keys())
+    seasonsInInfo.remove("key")
+
+    #Get from Deta base all items from each season and update the count
+    for season in seasonsInInfo:
+        items = db.fetch(query={"season": int(season)}, limit=1000)
+        if items.count == seasonsInInfo[season]:
+            print(f"Season {season} episode count up to date ({items.count})")
+            continue
+        else:
+            print(f"Season {season} episode count not up to date, updating... from {items.count} to {seasonsInInfo[season]}")
+            info[season] = items.count
+
+    # db.put(info, key="info")
+
+from pydantic import BaseModel
+
+class DetaSpaceActions(BaseModel):
+    event: dict = {"id": str, "trigger": str}
+
 # Paths for Deta Space to call at scheduled times
 @app.post("/__space/v0/actions", tags=["Actualitza informació"], description="Actualitza la informació dels episodis del podcast, **no es pot accedir.**", include_in_schema=True)
 def actualitza_info(action: DetaSpaceActions):
@@ -312,6 +330,10 @@ def actualitza_info(action: DetaSpaceActions):
 
     if actionID == "updateInfo":
         updateDatabase()
+        #update episode count too
+        updateEpisodeCount()
+    elif actionID == "updateEpisodeCount":
+        updateEpisodeCount()
     else:
         raise HTTPException(status_code=402, detail="Action not found")
 
