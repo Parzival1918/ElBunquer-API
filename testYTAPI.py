@@ -117,10 +117,10 @@ while nextPage and not allEntriesAlreadyInDeta:
             itemsCount += 1
 
             #Update info, check that season exists
-            if season in info:
-                info[season] += 1
+            if f"{season}" in info:
+                info[f"{season}"] += 1
             else:
-                info[season] = 1
+                info[f"{season}"] = 1
             
             print(f"Added {item['snippet']['title']} to Deta")
         else:
@@ -142,11 +142,11 @@ while nextPage and not allEntriesAlreadyInDeta:
                 itemsCount += 1
 
                 #Update info, check that season exists
-                info[season] -= 1
-                if season2 in info:
-                    info[season2] += 1
+                info[f"{season}"] -= 1
+                if f"{season2}" in info:
+                    info[f"{season2}"] += 1
                 else:
-                    info[season2] = 1
+                    info[f"{season2}"] = 1
             else:
                 print(f"Item {item['snippet']['title']} already in Deta")
                 allEntriesAlreadyInDeta = True
@@ -156,6 +156,7 @@ while nextPage and not allEntriesAlreadyInDeta:
         response = callYTAPI(ELBUNQUER_ID, nextPage)
 
 print(f"Added {itemsCount} items to Deta")
-print(info)
 
+info.pop("key")
+print(info)
 # db.put(info, key="info")
