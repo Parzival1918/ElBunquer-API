@@ -7,6 +7,7 @@ from random import choice
 from deta import Deta
 import os
 import googleapiclient.discovery
+from pydantic import BaseModel
 
 # Initialize with a Project Key from DetaBaseKey.txt
 with open("DetaBaseKey.txt") as f:
@@ -52,7 +53,29 @@ app = FastAPI(
     redoc_url="/alt-docs",
 )
 
-@app.get("/info-episodi/{temporada}/{episodi}", tags=["Informació episodi"], description="Obté informació d'un episodi del podcast.")
+class VideoDescription(BaseModel):
+    height: int
+    url: str
+    width: int
+
+class VideoTumbnails(BaseModel):
+    default: VideoDescription
+    medium: VideoDescription
+    high: VideoDescription
+    standard: VideoDescription
+    maxres: VideoDescription
+
+class InfoEpisodi(BaseModel):
+    videoId: str
+    videoTitle: str
+    videoDescription: str
+    videoThumbnails: VideoTumbnails
+    videoDate: str
+    videoLink: str
+    season: int
+    episode: int
+
+@app.get("/info-episodi/{temporada}/{episodi}", tags=["Informació episodi"], description="Obté informació d'un episodi del podcast.", response_model=InfoEpisodi)
 def info_episodi_per_temporada(temporada: int, episodi: int):
     #Get from Deta base
     key = f"s{temporada}e{episodi}"
@@ -62,7 +85,7 @@ def info_episodi_per_temporada(temporada: int, episodi: int):
     
     return data
 
-@app.get("/info-episodi/aleatori", tags=["Informació episodi"], description="Obté informació d'un episodi aleatori del podcast.")
+@app.get("/info-episodi/aleatori", tags=["Informació episodi"], description="Obté informació d'un episodi aleatori del podcast.", response_model=InfoEpisodi)
 def episodi_aleatori(inclou_extres: bool = False):
     #Get from Deta base info
     info = db.get(key="info")
@@ -89,7 +112,10 @@ def episodi_aleatori(inclou_extres: bool = False):
 
     return data
 
-@app.get("/info-episodis/per-temporada/{temporada}", tags=["Informació episodis"], description="Obté informació de multiples episodis del podcast d'una temporada.")
+class InfoEpisodis(BaseModel):
+    episodis: list[InfoEpisodi]
+
+@app.get("/info-episodis/per-temporada/{temporada}", tags=["Informació episodis"], description="Obté informació de multiples episodis del podcast d'una temporada.", response_model=InfoEpisodis)
 def info_episodis_per_temporada(temporada: int):
     #Get from Deta base
     key = f"s{temporada}"
@@ -97,7 +123,7 @@ def info_episodis_per_temporada(temporada: int):
     if data is None:
         raise HTTPException(status_code=400, detail="L'episodi i/o la temporada no existeix")
     
-    return data.items
+    return {"episodis": data.items}
 
 def search_word(word: str, text: str):
     for w in text.split(sep=" "):
@@ -110,7 +136,7 @@ def search_word(word: str, text: str):
         
     return False
         
-@app.get("/info-episodis/per-cerca/{cerca}", tags=["Informació episodis"], description="Obté informació de multiples episodis del podcast fent una cerca per paraula.")
+@app.get("/info-episodis/per-cerca/{cerca}", tags=["Informació episodis"], description="Obté informació de multiples episodis del podcast fent una cerca per paraula.", response_model=InfoEpisodis)
 def info_episodis_per_cerca(cerca: str, cerca_descripcio: bool = False):
     print(f"Searched for: {cerca}")
     #Get from Deta base
@@ -132,7 +158,7 @@ def info_episodis_per_cerca(cerca: str, cerca_descripcio: bool = False):
 
     print(f"Found {len(furtherFileredData)} results")
     
-    return furtherFileredData
+    return {"episodis": furtherFileredData}
 
 def obtainSeason(videoTitle: str):
     #Get the season number, parse title text to find digits in format 00x00
@@ -316,8 +342,6 @@ def updateEpisodeCount():
             info[season] = items.count
 
     # db.put(info, key="info")
-
-from pydantic import BaseModel
 
 class DetaEvent(BaseModel):
     id: str
