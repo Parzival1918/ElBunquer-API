@@ -319,8 +319,12 @@ def updateEpisodeCount():
 
 from pydantic import BaseModel
 
+class DetaEvent(BaseModel):
+    id: str
+    trigger: str
+
 class DetaSpaceActions(BaseModel):
-    event: dict = {"id": str, "trigger": str}
+    event: DetaEvent
 
 # Paths for Deta Space to call at scheduled times
 @app.post("/__space/v0/actions", tags=["Actualitza informació"], description="Actualitza la informació dels episodis del podcast, **no es pot accedir.**", include_in_schema=True)
