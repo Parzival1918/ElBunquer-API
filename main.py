@@ -334,7 +334,7 @@ def updateEpisodeCount():
     #Get from Deta base all items from each season and update the count
     for season in seasonsInInfo:
         items = db.fetch(query={"season": int(season)}, limit=1000)
-        if items.count == seasonsInInfo[season]:
+        if items.count == info[season]:
             print(f"Season {season} episode count up to date ({items.count})")
             continue
         else:
