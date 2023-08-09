@@ -11,4 +11,4 @@ micros:
         name: "Update video information"
         description: "Find new videos from YT playlist"
         trigger: "schedule"
-        default_interval: "2 minutes"
+        default_interval: "30 minutes"

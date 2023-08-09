@@ -273,7 +273,7 @@ def updateDatabase():
             if res is None:
                 #Add to Deta
                 key,season=get_key_from_title(item["snippet"]["title"])
-                # db.put(format_entry(item, info), key=key)
+                db.put(format_entry(item, info), key=key)
                 itemsCount += 1
 
                 #Update info, check that season exists
@@ -300,8 +300,8 @@ def updateDatabase():
                     
                     #Add to Deta again with the new season and episode
                     key,season=get_key_from_title(item["snippet"]["title"])
-                    # db.delete(key=res["key"])
-                    # db.put(format_entry(item, info), key=key)
+                    db.delete(key=res["key"])
+                    db.put(format_entry(item, info), key=key)
                     itemsCount += 1
 
                     #Update info, check that season exists
@@ -323,7 +323,7 @@ def updateDatabase():
 
     info.pop("key")
     print(info)
-    # db.put(info, key="info")
+    db.put(info, key="info")
 
 def updateEpisodeCount():
     #Get from Deta base info
@@ -341,7 +341,7 @@ def updateEpisodeCount():
             print(f"Season {season} episode count not up to date, updating... from {items.count} to {seasonsInInfo[season]}")
             info[season] = items.count
 
-    # db.put(info, key="info")
+    db.put(info, key="info")
 
 class DetaEvent(BaseModel):
     id: str
