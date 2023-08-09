@@ -1,0 +1,14 @@
+# Spacefile Docs: https://go.deta.dev/docs/spacefile/v0
+v: 0
+micros:
+  - name: ElBunquer-API
+    src: ./
+    engine: python3.9
+    primary: true
+    run: uvicorn main:app
+    actions:
+      - id: "updateInfo"
+        name: "Update video information"
+        description: "Find new videos from YT playlist"
+        trigger: "schedule"
+        default_interval: "5 minutes"

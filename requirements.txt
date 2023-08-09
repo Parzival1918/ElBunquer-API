@@ -1,3 +1,4 @@
 fastapi
 uvicorn[standard]
 deta
+google-api-python-client
